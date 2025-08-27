@@ -1,0 +1,77 @@
+# This workflow is managed by gh actions-lock.
+
+name: Release
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact:
+        description: "Choose type of artifact:"
+        required: true
+        type: choice
+        options:
+          - blob
+          - container
+      signing_method:
+        description: "Choose a signing method:"
+        required: true
+        type: choice
+        options:
+          - keyless
+          - keys
+
+jobs:
+  release_blob_keyless:
+    name: Build sign and release a blob without keys
+    permissions:
+      id-token: write # Permits to use OpenID Connect (OIDC) token for signing and attestation: sign, attest.
+      attestations: write # Permits to generate an artifact attestation: attest.
+      artifact-metadata: write # Permits to create the artifact storage record: attest.
+      contents: write # Permits to create a release: release.
+      actions: read # TODO:
+    if: ${{ inputs.artifact == 'blob' && inputs.signing_method == 'keyless' }}
+    uses: lkhn/sscs-reusable-workflows/.github/workflows/reusable_release_blob_keyless.yaml@main
+
+  # release_blob_key:
+  #   name: Build sign and release a blob with keys
+  #   permissions:
+  #     id-token: write # Use GitHub OIDC provider for SLSA provenance generation and Artifact attestations.
+  #     actions: read # For the detection of GitHub Actions environment.
+  #     attestations: write # Generate Artifact attestations.
+  #     contents: write # Create a release.
+  #   if: ${{ inputs.filetype == 'blob' && inputs.sign_method == 'keys' }}
+  #   uses: lkhn/sscs-reusable-workflows/.github/workflows/reusable_release_blob_key.yaml@main
+  #   with:
+  #     version: ${{ inputs.version }}
+  #   secrets:
+  #     sigstore_private_key: ${{ secrets.SIGSTORE_PRIVATE_KEY }}
+  #     sigstore_private_key_password: ${{ secrets.SIGSTORE_PRIVATE_KEY_PASSWORD }}
+
+  release_container_keyless:
+    name: Build sign and release a container image without keys
+    permissions:
+      packages: write # Push container images to ghcr.io: build, sign, attest.
+      id-token: write # Permits to use OpenID Connect (OIDC) token for signing and attestation: sign, attest.
+      attestations: write # Permits to generate an artifact attestation: attest.
+      artifact-metadata: write # Permits to create the artifact storage record: attest.
+      contents: write # Permits to create a release: release.
+      actions: read # TODO:
+    if: ${{ inputs.artifact == 'container' && inputs.signing_method == 'keyless' }}
+    uses: lkhn/sscs-reusable-workflows/.github/workflows/reusable_release_container_keyless.yaml@main
+
+  release_container_key:
+    name: Build sign and release a container image with keys
+    permissions:
+      packages: write # Push container images to ghcr.io: build, sign, attest.
+      id-token: write # Permits to use OpenID Connect (OIDC) token for attestation: attest.
+      attestations: write # Permits to generate an artifact attestation: attest.
+      artifact-metadata: write # Permits to create the artifact storage record: attest.
+      contents: write # Permits to create a release: release.
+      actions: read # TODO:
+    if: ${{ inputs.artifact == 'container' && inputs.signing_method == 'keys' }}
+    uses: lkhn/sscs-reusable-workflows/.github/workflows/reusable_release_container_key.yaml@main
+    secrets:
+      sigstore_private_key: ${{ secrets.SIGSTORE_PRIVATE_KEY }}
+      sigstore_private_key_password: ${{ secrets.SIGSTORE_PRIVATE_KEY_PASSWORD }}
